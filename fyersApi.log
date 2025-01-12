@@ -1,0 +1,1 @@
+{"level":"ERROR","location":"[get_call:111] fyersModel","message":"not a valid non-string sequence or mapping object","timestamp":"2024-02-10 15:51:31,116+0530","service":"FyersDataSocket"}

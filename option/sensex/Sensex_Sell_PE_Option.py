@@ -12,12 +12,14 @@ from datetime import date, datetime
 current_datetime = datetime.now()
 formatted_time = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
 
+LOG_FOLDER = "logs"
+LOG_FILE = "Sensex_Sell_PE_Option.log"
+os.makedirs(LOG_FOLDER, exist_ok=True)
 logging.basicConfig(
-    filename='sensex1.log',
+    filename=os.path.join(LOG_FOLDER, LOG_FILE),
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
-
 print('sys.path', sys.path)
 
 config = {'target1': '', 'quantity1': '', 'limitPrice1': '',
@@ -27,6 +29,16 @@ config = {'target1': '', 'quantity1': '', 'limitPrice1': '',
 
 
 class Sensex_Sell_PE_Option:
+    executionFlag = False
+
+    @classmethod
+    def set_flag(self, value: bool):
+        self.executionFlag = value  # Update the flag value
+
+    @classmethod
+    def get_flag(self) -> bool:
+        # print('self.executionFlag  inside get_flag', self.executionFlag)
+        return self.executionFlag  # Return the current flag value
 
     def __init__(self) -> None:
         global config
@@ -105,7 +117,7 @@ class Sensex_Sell_PE_Option:
                 print('\033[92m-------------------------place_order 1---------------------------')
                 logging.info("-----------------------------Trading Time--" + formatted_time + '------------------')
                 print('current time--', time.strftime(" %H:%M:%S"))
-                logging.info('Order Placed with PaperWork in place_order 1  %s %s', self.symbol, filterStockPrice)
+                logging.info('Order Placed  in place_order 1  %s %s', self.symbol, filterStockPrice)
 
                 if Constant.PAPER_TRADE == 'YES':
                     print('You are trading with PaperWork')
@@ -141,6 +153,7 @@ class Sensex_Sell_PE_Option:
                 logging.info("Trade is Squared OFF at - %s", ltp)
                 return
             print('\033[93m---------------------Machine2----Selling PE mode with Order 1 ---------------------------')
+            print('current time--', time.strftime('%H:%M:%S'))
             print('Stop_loss1', Sell_FinalSL)
             Target1 = int(config1['limitPrice1']) - int(config1['target1'])
             if Target1 < 0:
@@ -159,6 +172,11 @@ class Sensex_Sell_PE_Option:
                     f.close()
                 print("Stop loss hit first time of " + self.symbol + ' at ' + str(ltp))
                 logging.info("Stop loss hit first time of " + self.symbol + ' at ' + str(ltp))
+                executionFlag = True
+                if executionFlag:
+                    Sensex_Sell_PE_Option.set_flag(True)
+                    Sensex_Sell_PE_Option.get_flag()
+                    # print('Sensex_Sell_PE_Option.get_flag()----', Sensex_Sell_PE_Option.get_flag())
                 fyerUtils.exit_position(ExitId)
                 if Order2_Execution_Flag == 'True':
                     Sensex_Sell_PE_Option.place_order_2(self)
@@ -169,7 +187,7 @@ class Sensex_Sell_PE_Option:
                 intrade = 0
                 Sell_FinalSL1 = 800
                 while intrade == 0:
-                    print('current time--', time.strftime('%H:%M:%S'))
+                    # print('current time--', time.strftime('%H:%M:%S'))
                     symbol4 = {"symbols": self.symbol}
                     ltp = dataconfig.get_LTP(symbol4)
                     config1 = json.load(open(Constant.SENSEX_SELL_PE_OPTION))
@@ -208,6 +226,11 @@ class Sensex_Sell_PE_Option:
                         with open(Constant.SENSEX_SELL_PE_OPTION, 'w') as f:
                             f.write(json.dumps(self.config))
                             f.close()
+                            executionFlag = True
+                            if executionFlag:
+                                Sensex_Sell_PE_Option.set_flag(True)
+                                Sensex_Sell_PE_Option.get_flag()
+                                # print('Sensex_Sell_PE_Option.get_flag()----', Sensex_Sell_PE_Option.get_flag())
                         fyerUtils.exit_position(ExitId)
                         print("Profit booked in second go for " + self.symbol + ' at ' + str(ltp))
                         logging.info("Profit booked in second go for " + self.symbol + ' at ' + str(ltp))

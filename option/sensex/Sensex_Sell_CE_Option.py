@@ -1,12 +1,27 @@
 import base64
+import base64
 import json, traceback
 import os.path
 import time
-from fyers_api import fyersModel, accessToken
-# from fyers_apiv3 import fyersModel
+from fyers_apiv3 import fyersModel
 from utils import Constant
 from utils.Fyers_Utilty import Fyers_Utilty
 import sys
+import logging
+from datetime import date, datetime
+
+
+current_datetime = datetime.now()
+formatted_time = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+LOG_FOLDER = "logs"
+LOG_FILE = "Sensex_Sell_CE_Option.log"
+os.makedirs(LOG_FOLDER, exist_ok=True)
+logging.basicConfig(
+    filename=os.path.join(LOG_FOLDER, LOG_FILE),
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 print('sys.path', sys.path)
 
@@ -16,20 +31,30 @@ config = {'target1': '', 'quantity1': '', 'limitPrice1': '',
           }
 
 
-class Nifty_Sell_CE_Option:
+class Sensex_Sell_CE_Option:
+    executionFlag = False
+
+    @classmethod
+    def set_flag(self, value: bool):
+        self.executionFlag = value  # Update the flag value
+
+    @classmethod
+    def get_flag(self) -> bool:
+        print('self.executionFlag  inside get_flag', self.executionFlag)
+        return self.executionFlag  # Return the current flag value
 
     def __init__(self) -> None:
         global config
 
         try:
-            if not os.path.join(os.getcwd().join(Constant.NIFTY_SELL_CE_OPTION.strip())):
+            if not os.path.join(os.getcwd().join(Constant.SENSEX_SELL_CE_OPTION.strip())):
                 self.create_config_file()
                 print("file not exists", os.getcwd())
             else:
                 print("file  exist", os.getcwd())
         except:
             print(traceback.print_exc())
-        config = json.load(open(Constant.NIFTY_SELL_CE_OPTION))
+        config = json.load(open(Constant.SENSEX_SELL_CE_OPTION))
         print("\033[93mSell_config--", config)
         self.target1 = config['target1']
         self.target2 = config['target2']
@@ -44,12 +69,12 @@ class Nifty_Sell_CE_Option:
         if self.target1 == '' or self.target2 == '' or self.quantity1 == '' or self.quantity2 == '':
             print(self.target1, 'self.target2-', self.target2,
                   'self.quantity1-', self.quantity1, 'self.quantity2', self.quantity2)
-            print('please enter all the details in the NIFTY_SELL_CE_OPTION.json file')
+            print('please enter all the details in the SENSEX_SELL_CE_OPTION.json file')
             exit()
 
     def create_config_file(self):
         file = json.dumps(config, indent=10)
-        with open("../../config/NIFTY_SELL_CE_OPTION.json", "w") as f:
+        with open("../../config/SENSEX_SELL_CE_OPTION.json", "w") as f:
             f.write(file)
             f.close()
 
@@ -64,6 +89,8 @@ class Nifty_Sell_CE_Option:
         filterStock = self.symbol
         symbol2 = {"symbols": filterStock}
         filterStockPrice = dataconfig.get_LTP(symbol2)
+        limitPrice = float(filterStockPrice)
+        print('filterStockPrice---', limitPrice)
         side = -1
         intrade = 1
         symbol = {"symbols": self.symbol}
@@ -77,7 +104,8 @@ class Nifty_Sell_CE_Option:
             "stopPrice": 0,
             "validity": "DAY",
             "disclosedQty": 0,
-            "offlineOrder": "False"
+            "offlineOrder": False,
+            "orderTag": "tag1"
         }
         try:
             while True:
@@ -86,33 +114,39 @@ class Nifty_Sell_CE_Option:
                 self.limitPrice1 = filterStockPrice
                 print('filterStockPrice---', filterStockPrice)
                 self.config['limitPrice1'] = self.limitPrice1
-                with open(Constant.NIFTY_SELL_CE_OPTION, 'w') as f:
+                with open(Constant.SENSEX_SELL_CE_OPTION, 'w') as f:
                     f.write(json.dumps(self.config))
                     f.close()
-                config4 = json.load(open(Constant.NIFTY_SELL_CE_OPTION))
+                config4 = json.load(open(Constant.SENSEX_SELL_CE_OPTION))
                 print('\033[92m-------------------------place_order 1---------------------------')
+                logging.info("-----------------------------Trading Time--" + formatted_time + '------------------')
                 print('Order still not placed in Sell place_order 1 for ', self.symbol, 'with LTP -', filterStockPrice,
                       ' and with LIMIT Price1 - ',
                       config4['limitPrice1'])
+                logging.info('Order Placed  in place_order 1  %s %s', self.symbol, filterStockPrice)
+
                 print('current time--', time.strftime(" %H:%M:%S"))
 
                 if Constant.PAPER_TRADE == 'YES':
                     print('You are trading with PaperWork')
+                    logging.info("You are trading with PaperWork.")
                 else:
                     response = fyers.place_order(data1)
                     print('Order Placed  in place_order 1 with LTP ', filterStockPrice, response)
+                    logging.info('Order Placed  in place_order 1 with LTP  %s %s', filterStockPrice, response)
+
                 # print('Order Placed  in place_order 1 with LTP ', ltp)
                 break
         except:
             print(traceback.print_exc())
-        Sell_FinalSL = 1000.0
+        Sell_FinalSL = 2000.0
         fyerUtils = Fyers_Utilty()
         while intrade == 1:
-            print('current time--', time.strftime('%H:%M:%S'))
+            # print('current time--', time.strftime('%H:%M:%S'))
 
             ltp = dataconfig.get_LTP(symbol2)
-            time.sleep(2)
-            config1 = json.load(open(Constant.NIFTY_SELL_CE_OPTION))
+            time.sleep(Constant.WAITING_TIME)
+            config1 = json.load(open(Constant.SENSEX_SELL_CE_OPTION))
             entry_price = config1['limitPrice1']
             Order2_Execution_Flag = config1['Order2_Execution_Flag']
             print('Order2_Execution_Flag -- ', Order2_Execution_Flag)
@@ -126,24 +160,36 @@ class Nifty_Sell_CE_Option:
             if time.strftime('%H:%M') == Constant.TRADE_SQUARE_OFF:
                 fyerUtils.exit_position(ExitId)
                 print('Trade is Squared OFF')
+                logging.info("Trade is Squared OFF at - %s ", ltp)
                 return
             print('\033[96m---------------------Machine2----Selling CE mode with Order 1 ---------------------------')
+            print('current time--', time.strftime('%H:%M:%S'))
             print('Stop_loss1', Sell_FinalSL)
             Target1 = int(config1['limitPrice1']) - int(config1['target1'])
-            print('Target1', Target1)
+            if Target1 < 0:
+                Target1 = 0
+                print('Target1', Target1)
+            else:
+                print('Target1', Target1)
             # ltp = 368
             if sell_trailing_stop_loss_price < Sell_FinalSL:
                 Sell_FinalSL = sell_trailing_stop_loss_price
             if (side == -1) and (ltp is not None and ltp >= Sell_FinalSL):
                 self.config['symbol'] = None
                 self.config['limitPrice1'] = 0
-                with open(Constant.NIFTY_SELL_CE_OPTION, 'w') as f:
+                with open(Constant.SENSEX_SELL_CE_OPTION, 'w') as f:
                     f.write(json.dumps(self.config))
                     f.close()
                 print("Stop loss hit first time of " + self.symbol + ' at ' + str(ltp))
+                logging.info("Stop loss hit first time of " + self.symbol + ' at ' + str(ltp))
+                executionFlag = True
+                if executionFlag:
+                    Sensex_Sell_CE_Option.set_flag(True)
+                    Sensex_Sell_CE_Option.get_flag()
+                    # print('Sensex_Sell_CE_Option.get_flag()----', Sensex_Sell_CE_Option.get_flag())
                 fyerUtils.exit_position(ExitId)
                 if Order2_Execution_Flag == 'True':
-                    Nifty_Sell_CE_Option.place_order_2(self)
+                    Sensex_Sell_CE_Option.place_order_2(self)
                 else:
                     print('-------------------------------------------------------------------------------')
                     print("Order 2 not executed due to Order2_Execution_Flag=False")
@@ -151,20 +197,21 @@ class Nifty_Sell_CE_Option:
                 intrade = 0
                 Sell_FinalSL1 = 800
                 while intrade == 0:
-                    print('current time--', time.strftime('%H:%M:%S'))
+                    #print('current time--', time.strftime('%H:%M:%S'))
                     symbol4 = {"symbols": self.symbol}
                     ltp = dataconfig.get_LTP(symbol4)
-                    config1 = json.load(open(Constant.NIFTY_SELL_CE_OPTION))
+                    config1 = json.load(open(Constant.SENSEX_SELL_CE_OPTION))
                     entry_price = config1['limitPrice2']
                     stop_loss_2_percent = config1['stop_loss_2_percent']
                     current_price = ltp
                     sell_trailing_stop_loss_price1 = fyerUtils.Sell_trailing_stop_loss(current_price, int(entry_price),
                                                                                        int(stop_loss_2_percent))
-                    time.sleep(2)
+                    time.sleep(Constant.WAITING_TIME)
                     ExitId = {"id": "" + (self.symbol + '-' + productType) + ''}
                     if time.strftime('%H:%M') == Constant.TRADE_SQUARE_OFF:
                         fyerUtils.exit_position(ExitId)
                         print('Trade is Squared OFF')
+                        logging.info("Trade is Squared OFF at - %s ", ltp)
                         return
                     print('-----------------------Machine1--SELLING PE mode with Order 2---------------------------')
                     print('Stop_loss2', Sell_FinalSL1)
@@ -175,31 +222,40 @@ class Nifty_Sell_CE_Option:
                     if ltp is not None and ltp >= Sell_FinalSL1:
                         self.config['symbol'] = None
                         self.config['limitPrice2'] = 0
-                        with open(Constant.NIFTY_SELL_CE_OPTION, 'w') as f:
+                        with open(Constant.SENSEX_SELL_CE_OPTION, 'w') as f:
                             f.write(json.dumps(self.config))
                             f.close()
                         print('exit data', ExitId)
                         fyerUtils.exit_position(ExitId)
                         print("Stop loss hit second time of " + self.symbol + ' at ' + str(ltp))
+                        logging.info("Stop loss hit second time of " + self.symbol + ' at ' + str(ltp))
                         return
                     elif ltp is not None and ltp <= Target2:
                         self.config['symbol'] = None
                         self.config['limitPrice2'] = 0
-                        with open(Constant.NIFTY_SELL_CE_OPTION, 'w') as f:
+                        with open(Constant.SENSEX_SELL_CE_OPTION, 'w') as f:
                             f.write(json.dumps(self.config))
                             f.close()
                         fyerUtils.exit_position(ExitId)
                         print("Profit booked in second go for " + self.symbol + ' at ' + str(ltp))
+                        logging.info("Profit booked in second go for " + self.symbol + ' at ' + str(ltp))
+
                         return
             elif (side == -1) and (ltp is not None and ltp <= Target1):
                 self.config['symbol'] = None
                 self.config['limitPrice1'] = 0
-                with open(Constant.NIFTY_SELL_CE_OPTION, 'w') as f:
+                with open(Constant.SENSEX_SELL_CE_OPTION, 'w') as f:
                     f.write(json.dumps(self.config))
                     f.close()
                 print('ltp price in profit booking', ltp)
                 fyerUtils.exit_position(ExitId)
-                print("Profit booked in first go for " + self.symbol + ' at ' + str(ltp))
+                executionFlag = True
+                if executionFlag:
+                    Sensex_Sell_CE_Option.set_flag(True)
+                    Sensex_Sell_CE_Option.get_flag()
+                # print('Sensex_Sell_CE_Option.get_flag()----', Sensex_Sell_CE_Option.get_flag())
+                # print("Profit booked in first go for " + self.symbol + ' at ' + str(ltp))
+                logging.info("Profit booked in first go for " + self.symbol + ' at ' + str(ltp))
                 return
             else:
                 time.sleep(1)
@@ -235,9 +291,8 @@ class Nifty_Sell_CE_Option:
             "stopPrice": 0,
             "validity": "DAY",
             "disclosedQty": 0,
-            "offlineOrder": "False",
-            "stopLoss": 0,
-            "takeProfit": self.target2
+            "offlineOrder": False,
+            "orderTag": "tag1"
         }
 
         try:
@@ -246,17 +301,21 @@ class Nifty_Sell_CE_Option:
 
                 if Constant.PAPER_TRADE == 'YES':
                     print('You are trading with PaperWork')
+                    logging.info("You are trading with PaperWork.")
                 else:
                     response = fyers.place_order(data2)
                     print('Order Placed  in place_order 2 with LTP ', filterStockPrice, response)
+                    logging.info('Order Placed  in place_order 2 with LTP  %s %s', filterStockPrice, response)
                 self.config['symbol'] = self.symbol
                 self.limitPrice2 = filterStockPrice
                 self.limitPrice2 = filterStockPrice
                 self.config['limitPrice2'] = self.limitPrice2
-                with open(Constant.NIFTY_SELL_CE_OPTION, 'w') as f:
+                with open(Constant.SENSEX_SELL_CE_OPTION, 'w') as f:
                     f.write(json.dumps(self.config))
                     f.close()
                 print('Order Placed  in place_order 2 with LTP ', filterStockPrice, ' for -', self.symbol)
+                logging.info('Order Placed  in place_order 2 with LTP %s %s', filterStockPrice, self.symbol)
+
                 return self.limitPrice2
 
         except:
@@ -264,6 +323,6 @@ class Nifty_Sell_CE_Option:
 
 
 if __name__ == '__main__':
-    dataconfig = Nifty_Sell_CE_Option()
+    dataconfig = Sensex_Sell_CE_Option()
 
     dataconfig.place_order_1()

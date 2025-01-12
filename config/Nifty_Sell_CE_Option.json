@@ -1,0 +1,1 @@
+{"Order2_Execution_Flag": "True", "stop_loss_1_percent": "20", "stop_loss_2_percent": "30", "Premium_Price": 100, "target1": "100", "stop_loss1": "350", "quantity1": "50", "limitPrice1": 101.8, "target2": "100", "stop_loss2": "300", "quantity2": "50", "limitPrice2": 102, "symbol": "NSE:NIFTY24APR22350CE", "productType": "INTRADAY", "stopLoss_count": "2"}

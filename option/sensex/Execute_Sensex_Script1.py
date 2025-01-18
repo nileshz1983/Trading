@@ -22,6 +22,7 @@ class Execute_Sensex_Script:
 
         # Run both scripts in parallel
         process_one = subprocess.Popen(["py", script_path])
+        time.sleep(2)
         process_two = subprocess.Popen(["py", script_path1])
 
         # Wait for both processes to complete
@@ -35,13 +36,21 @@ class Execute_Sensex_Script:
         # print('Sensex_Sell_CE_Option().executionFlag', Sell_CE_Option.get_flag())
         # print('Sensex_Sell_PE_Option().executionFlag', Sell_PE_Option.get_flag())
         if (Sell_CE_Option.get_flag() == False) & (Sell_PE_Option.get_flag() == False):
+            # if TRADE_SQUARE_OFF is greater tha 3.25 then script will execute only once
             if time.strftime('%H:%M') < Constant.TRADE_SQUARE_OFF:
                 Execute_Sensex_Script.executeScript_sensex_ce_pe_script(self)
-            else :
+            else:
+                print('Trade tomorrow as trading time is over at', Constant.TRADE_SQUARE_OFF)
                 return
 
 
 if __name__ == '__main__':
-    script = Execute_Sensex_Script()
-    script.executeScript_sensex_ce_pe_script()
-    # script.executeScript_sensex_ce_pe()
+
+    Trade = True
+    while Trade:
+        print('Current Time -----', time.strftime('%H:%M'))
+        time.sleep(5)
+        if time.strftime('%H:%M') >= Constant.TRADE_EXECUTION_TIME:
+            script = Execute_Sensex_Script()
+            script.executeScript_sensex_ce_pe_script()
+            Trade = False

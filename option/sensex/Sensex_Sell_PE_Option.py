@@ -20,7 +20,6 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
-print('sys.path', sys.path)
 
 config = {'target1': '', 'quantity1': '', 'limitPrice1': '',
           'target2': '', 'quantity2': '', 'limitPrice2': '', 'symbol': '',
@@ -49,11 +48,12 @@ class Sensex_Sell_PE_Option:
                 self.create_config_file()
                 print("file not exists", os.getcwd())
             else:
-                print("file  exist", os.getcwd())
+                pass
+                # print("file  exist", os.getcwd())
         except:
             print(traceback.print_exc())
         config = json.load(open(Constant.SENSEX_SELL_PE_OPTION))
-        print("\033[93mSell_config--", config)
+        # print("\033[93mSell_config--", config)
         self.target1 = config['target1']
         self.target2 = config['target2']
         self.symbol = config['symbol']
@@ -80,7 +80,6 @@ class Sensex_Sell_PE_Option:
         global counter, Sell_FinalSL, Buy_FinalSL, symbol2
         fyerUtils = Fyers_Utilty()
         classname = dataconfig.__class__.__name__
-
         fyers = fyersModel.FyersModel(client_id=fyerUtils.client_id, token=fyerUtils.access_token, log_path="")
 
         side = -1
@@ -116,7 +115,7 @@ class Sensex_Sell_PE_Option:
                 config4 = json.load(open(Constant.SENSEX_SELL_PE_OPTION))
                 print('\033[92m-------------------------place_order 1---------------------------')
                 logging.info("-----------------------------Trading Time--" + formatted_time + '------------------')
-                print('current time--', time.strftime(" %H:%M:%S"))
+                # print('current time--', time.strftime(" %H:%M:%S"))
                 logging.info('Order Placed  in place_order 1  %s %s', self.symbol, filterStockPrice)
 
                 if Constant.PAPER_TRADE == 'YES':
@@ -134,17 +133,18 @@ class Sensex_Sell_PE_Option:
         Sell_FinalSL = 2000.0
         fyerUtils = Fyers_Utilty()
         while intrade == 1:
-            print('current time--', time.strftime('%H:%M:%S'))
+            # print('current time--', time.strftime('%H:%M:%S'))
 
             ltp = dataconfig.get_LTP(symbol2)
+            # ltp = None
             time.sleep(Constant.WAITING_TIME)
             config1 = json.load(open(Constant.SENSEX_SELL_PE_OPTION))
             entry_price = config1['limitPrice1']
             Order2_Execution_Flag = config1['Order2_Execution_Flag']
-            print('Order2_Execution_Flag -- ', Order2_Execution_Flag)
+            # print('Order2_Execution_Flag -- ', Order2_Execution_Flag)
             stop_loss_1_percent = config1['stop_loss_1_percent']
             current_price = ltp
-            sell_trailing_stop_loss_price = fyerUtils.Sell_trailing_stop_loss(current_price, int(entry_price),
+            sell_trailing_stop_loss_price = fyerUtils.Sell_trailing_stop_loss_PE(current_price, int(entry_price),
                                                                               int(stop_loss_1_percent))
             ExitId = {"id": "" + (self.symbol + '-' + productType) + ''}
             if time.strftime('%H:%M') == Constant.TRADE_SQUARE_OFF:
@@ -152,15 +152,16 @@ class Sensex_Sell_PE_Option:
                 print('Trade is Squared OFF')
                 logging.info("Trade is Squared OFF at - %s", ltp)
                 return
-            print('\033[93m---------------------Machine2----Selling PE mode with Order 1 ---------------------------')
-            print('current time--', time.strftime('%H:%M:%S'))
-            print('Stop_loss1', Sell_FinalSL)
+            # print('\033[93m---------------------Sensex_Sell_PE_Option---------------------------')
+            # print('current time in Sensex_Sell_PE_Option --', time.strftime('%H:%M:%S'))
+            print('Stop_loss in Sensex_Sell_PE_Option -- ', Sell_FinalSL)
             Target1 = int(config1['limitPrice1']) - int(config1['target1'])
             if Target1 < 0:
                 Target1 = 0
-                print('Target1', Target1)
+                print('Target in Sensex_Sell_PE_Option --', Target1)
             else:
-                print('Target1', Target1)
+                print('Target in Sensex_Sell_PE_Option --', Target1)
+            # time.sleep(1)
             # ltp = 368
             if sell_trailing_stop_loss_price < Sell_FinalSL:
                 Sell_FinalSL = sell_trailing_stop_loss_price
@@ -177,7 +178,7 @@ class Sensex_Sell_PE_Option:
                     Sensex_Sell_PE_Option.set_flag(True)
                     Sensex_Sell_PE_Option.get_flag()
                     # print('Sensex_Sell_PE_Option.get_flag()----', Sensex_Sell_PE_Option.get_flag())
-                fyerUtils.exit_position(ExitId)
+                    fyerUtils.exit_position(ExitId)
                 if Order2_Execution_Flag == 'True':
                     Sensex_Sell_PE_Option.place_order_2(self)
                 else:
@@ -206,7 +207,6 @@ class Sensex_Sell_PE_Option:
                     print('-----------------------Machine2--SELLING PE mode with Order 2---------------------------')
                     print('Stop_loss2', Sell_FinalSL1)
                     Target2 = int(config1['limitPrice2']) - int(config1['target2'])
-                    print('Target2', Target2)
                     if sell_trailing_stop_loss_price1 < Sell_FinalSL1:
                         Sell_FinalSL1 = sell_trailing_stop_loss_price1
                     if ltp is not None and ltp >= Sell_FinalSL1:
@@ -254,6 +254,8 @@ class Sensex_Sell_PE_Option:
             fyerUtils = Fyers_Utilty()
             fyers = fyersModel.FyersModel(client_id=fyerUtils.client_id, token=fyerUtils.access_token, log_path="")
             ltp = fyers.quotes(symbol)['d'][0]['v']['lp']
+            print('\033[93m---------------------Sensex_Sell_PE_Option---------------------------')
+            print('current time in Sensex_Sell_PE_Option --', time.strftime('%H:%M:%S'))
             print('ltp of ', self.symbol, ' is ', ltp)
             return ltp
         except:
@@ -262,7 +264,7 @@ class Sensex_Sell_PE_Option:
     def place_order_2(self):
         print('\033[94m-------------------------place_order 2---------------------------')
 
-        print('current time--', time.strftime('%H:%M:%S'))
+        # print('current time--', time.strftime('%H:%M:%S'))
         side = -1
         classname = dataconfig.__class__.__name__
         fyerUtils = Fyers_Utilty()

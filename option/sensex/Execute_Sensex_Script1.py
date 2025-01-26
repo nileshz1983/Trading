@@ -2,6 +2,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 import time
 import subprocess
+from datetime import date
 from pathlib import Path
 from option.sensex.Sensex_Sell_CE_Option import Sensex_Sell_CE_Option
 from option.sensex.Sensex_Sell_PE_Option import Sensex_Sell_PE_Option
@@ -49,8 +50,18 @@ if __name__ == '__main__':
     Trade = True
     while Trade:
         print('Current Time -----', time.strftime('%H:%M'))
+        current_date = date.today()
+        # Get the day of the month
+        day_of_month = current_date.day
         time.sleep(5)
-        if time.strftime('%H:%M') >= Constant.TRADE_EXECUTION_TIME:
+
+        print("Day of the month:", day_of_month)
+        if Constant.SENSEX_EXPIRY_DAY < day_of_month:
+            print('Please provide the correct expiry date of  SENSEX')
+            exit()
+
+        elif time.strftime('%H:%M') >= Constant.TRADE_EXECUTION_TIME:
+
             script = Execute_Sensex_Script()
             script.executeScript_sensex_ce_pe_script()
             Trade = False
